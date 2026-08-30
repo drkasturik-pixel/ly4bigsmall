@@ -1,10 +1,11 @@
 /* =========================================
-   BIG OR SMALL - SENIOR KG GAME
+   BIG OR SMALL GAME
+   SENIOR KG
    ========================================= */
 
 
 /* =========================================
-   10 QUESTIONS
+   QUESTIONS
    ========================================= */
 
 const rounds = [
@@ -72,21 +73,19 @@ const rounds = [
 ];
 
 
-
 /* =========================================
-   GAME VARIABLES
+   VARIABLES
    ========================================= */
 
-let index = 0;
+let currentQuestion = 0;
 
 let score = 0;
 
-let locked = false;
-
+let questionLocked = false;
 
 
 /* =========================================
-   GET ELEMENTS
+   ELEMENTS
    ========================================= */
 
 const splash =
@@ -101,6 +100,15 @@ const game =
 const endScreen =
     document.getElementById("endScreen");
 
+const startBtn =
+    document.getElementById("startBtn");
+
+const againBtn =
+    document.getElementById("againBtn");
+
+const hearBtn =
+    document.getElementById("hearBtn");
+
 const pair =
     document.getElementById("pair");
 
@@ -110,7 +118,7 @@ const instruction =
 const progress =
     document.getElementById("progress");
 
-const scoreEl =
+const scoreDisplay =
     document.getElementById("score");
 
 const feedback =
@@ -118,6 +126,9 @@ const feedback =
 
 const confetti =
     document.getElementById("confetti");
+
+const finalScore =
+    document.getElementById("finalScore");
 
 const music =
     document.getElementById("music");
@@ -129,152 +140,447 @@ const wrongSound =
     document.getElementById("wrongSound");
 
 
-
 /* =========================================
-   BACKGROUND MUSIC
+   SAFE SPEECH FUNCTION
    ========================================= */
 
-function playMusic() {
+function speakText(text) {
 
-    music.volume = 0.15;
+    if (
+        typeof speak === "function"
+    ) {
 
-    const playPromise =
-        music.play();
+        speak(text);
 
-    if (playPromise) {
+        return;
 
-        playPromise.catch(() => {});
+    }
+
+
+    if (
+        "speechSynthesis" in window
+    ) {
+
+        window.speechSynthesis.cancel();
+
+        const message =
+            new SpeechSynthesisUtterance(text);
+
+        message.rate = 0.9;
+
+        message.pitch = 1.1;
+
+        window.speechSynthesis.speak(
+            message
+        );
 
     }
 
 }
 
 
+/* =========================================
+   START MUSIC
+   ========================================= */
+
+function startMusic() {
+
+    music.volume = 0.15;
+
+    const promise =
+        music.play();
+
+    if (promise) {
+
+        promise.catch(
+            function() {}
+        );
+
+    }
+
+}
+
 
 /* =========================================
    SHOW QUESTION
    ========================================= */
 
-function render() {
+function showQuestion() {
 
-    locked = false;
-
-
-    const q =
-        rounds[index];
+    questionLocked = false;
 
 
-    /* QUESTION TEXT */
+    const question =
+        rounds[currentQuestion];
+
+
+    /*
+       IMPORTANT:
+       The instruction now says
+       "Tap on..." instead of "Circle..."
+    */
 
     instruction.textContent =
-        `Tap on the ${q.target} ${q.item}.`;
+        "Tap on the " +
+        question.target +
+        " " +
+        question.item +
+        ".";
 
-
-    /* PROGRESS */
 
     progress.textContent =
-        `${index + 1} / 10`;
+        (currentQuestion + 1) +
+        " / 10";
 
-
-    /* CLEAR OLD OBJECTS */
 
     pair.innerHTML = "";
 
 
     /*
-       Randomly place the big and small
-       object on the left or right.
+       Randomly put BIG and SMALL
+       on left/right.
     */
 
-    const sizes =
+    let sizes;
+
+
+    if (
         Math.random() < 0.5
-            ? ["big", "small"]
-            : ["small", "big"];
+    ) {
+
+        sizes = [
+            "big",
+            "small"
+        ];
+
+    } else {
+
+        sizes = [
+            "small",
+            "big"
+        ];
+
+    }
 
 
-    sizes.forEach(function(size) {
+    sizes.forEach(
+        function(size) {
 
 
-        const button =
-            document.createElement("button");
+            const button =
+                document.createElement(
+                    "button"
+                );
 
 
-        button.type =
-            "button";
+            button.type =
+                "button";
 
 
-        button.className =
-            `choice ${size}`;
+            button.className =
+                "choice " + size;
 
 
-        button.dataset.size =
-            size;
+            button.dataset.size =
+                size;
 
 
-        button.innerHTML = `
-
-            <img
-                src="assets/${q.file}"
-                alt="${size} ${q.item}">
-
-            <span class="label">
-                ${size}
-            </span>
-
-        `;
+            button.setAttribute(
+                "aria-label",
+                size + " " + question.item
+            );
 
 
-        /*
-           POINTER EVENT
+            button.innerHTML =
 
-           Works with:
-           - Mouse
-           - Touch
-           - Android
-           - iPhone/iPad
-        */
+                '<img src="assets/' +
+                question.file +
+                '" alt="' +
+                size +
+                ' ' +
+                question.item +
+                '">' +
 
-        button.addEventListener(
-            "pointerup",
-            function(event) {
-
-                event.preventDefault();
-
-                check(size, button);
-
-            }
-        );
+                '<span class="label">' +
+                size +
+                '</span>';
 
 
-        pair.appendChild(button);
+            /*
+               POINTERUP works with:
+
+               • Mouse
+               • Android touch
+               • iPhone/iPad touch
+               • Tablet touch
+            */
+
+            button.addEventListener(
+                "pointerup",
+                function(event) {
+
+                    event.preventDefault();
+
+                    checkAnswer(
+                        size,
+                        button
+                    );
+
+                }
+            );
 
 
-    });
+            pair.appendChild(
+                button
+            );
+
+        }
+    );
 
 
     /*
        VOICE INSTRUCTION
-
-       "Tap on the big boy."
     */
 
-    setTimeout(function() {
+    setTimeout(
+        function() {
 
-        speak(
-            `Tap on the ${q.target} ${q.item}.`
-        );
+            speakText(
+                "Tap on the " +
+                question.target +
+                " " +
+                question.item + "."
+            );
 
-    }, 220);
+        },
+        250
+    );
 
 }
 
+
+/* =========================================
+   CHECK ANSWER
+   ========================================= */
+
+function checkAnswer(
+    selectedSize,
+    selectedButton
+) {
+
+
+    /*
+       Do nothing if the child has
+       already answered correctly.
+    */
+
+    if (questionLocked) {
+
+        return;
+
+    }
+
+
+    const question =
+        rounds[currentQuestion];
+
+
+    /* =====================================
+       CORRECT
+       ===================================== */
+
+    if (
+        selectedSize ===
+        question.target
+    ) {
+
+
+        questionLocked = true;
+
+
+        score++;
+
+
+        scoreDisplay.textContent =
+            "⭐ " + score;
+
+
+        selectedButton.classList.add(
+            "selected"
+        );
+
+
+        showCorrect();
+
+
+        speakText(
+            "Correct! Well done!"
+        );
+
+
+        /*
+           Move to next question
+           after feedback.
+        */
+
+        setTimeout(
+            function() {
+
+
+                currentQuestion++;
+
+
+                if (
+                    currentQuestion >=
+                    rounds.length
+                ) {
+
+                    finishGame();
+
+                } else {
+
+                    showQuestion();
+
+                }
+
+            },
+            1100
+        );
+
+    }
+
+
+    /* =====================================
+       WRONG
+       ===================================== */
+
+    else {
+
+
+        /*
+           The game DOES NOT move ahead.
+        */
+
+        selectedButton.classList.add(
+            "wrong"
+        );
+
+
+        showWrong();
+
+
+        speakText(
+            "Try again. Look carefully."
+        );
+
+
+        setTimeout(
+            function() {
+
+                selectedButton.classList.remove(
+                    "wrong"
+                );
+
+            },
+            800
+        );
+
+    }
+
+}
+
+
+/* =========================================
+   CORRECT FEEDBACK
+   ========================================= */
+
+function showCorrect() {
+
+
+    feedback.textContent =
+        "✓";
+
+
+    feedback.classList.remove(
+        "hidden"
+    );
+
+
+    correctSound.currentTime =
+        0;
+
+
+    correctSound
+        .play()
+        .catch(
+            function() {}
+        );
+
+
+    createConfetti();
+
+
+    setTimeout(
+        function() {
+
+            feedback.classList.add(
+                "hidden"
+            );
+
+        },
+        900
+    );
+
+}
+
+
+/* =========================================
+   WRONG FEEDBACK
+   ========================================= */
+
+function showWrong() {
+
+
+    feedback.textContent =
+        "✕";
+
+
+    feedback.classList.remove(
+        "hidden"
+    );
+
+
+    wrongSound.currentTime =
+        0;
+
+
+    wrongSound
+        .play()
+        .catch(
+            function() {}
+        );
+
+
+    setTimeout(
+        function() {
+
+            feedback.classList.add(
+                "hidden"
+            );
+
+        },
+        800
+    );
+
+}
 
 
 /* =========================================
    CONFETTI
    ========================================= */
 
-function confettiBurst() {
+function createConfetti() {
+
 
     confetti.innerHTML = "";
 
@@ -298,7 +604,9 @@ function confettiBurst() {
 
 
         const piece =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
 
         piece.className =
@@ -306,249 +614,56 @@ function confettiBurst() {
 
 
         piece.style.left =
-            Math.random() * 100 + "vw";
+            Math.random() * 100 +
+            "vw";
+
+
+        piece.style.backgroundColor =
+            colors[
+                i % colors.length
+            ];
 
 
         piece.style.animationDelay =
-            Math.random() * 0.2 + "s";
+            Math.random() * 0.2 +
+            "s";
 
 
-        piece.style.background =
-            colors[i % colors.length];
-
-
-        confetti.appendChild(piece);
-
+        confetti.appendChild(
+            piece
+        );
 
     }
 
 
-    setTimeout(function() {
+    setTimeout(
+        function() {
 
-        confetti.innerHTML = "";
+            confetti.innerHTML = "";
 
-    }, 1200);
-
-}
-
-
-
-/* =========================================
-   CORRECT ANSWER
-   ========================================= */
-
-function showCorrect() {
-
-
-    feedback.textContent =
-        "✓";
-
-
-    feedback.style.color =
-        "#35a853";
-
-
-    feedback.classList.remove(
-        "hidden"
+        },
+        1400
     );
 
-
-    correctSound.currentTime =
-        0;
-
-
-    correctSound
-        .play()
-        .catch(() => {});
-
-
-    confettiBurst();
-
-
-    setTimeout(function() {
-
-        feedback.classList.add(
-            "hidden"
-        );
-
-    }, 850);
-
 }
-
-
-
-/* =========================================
-   WRONG ANSWER
-   ========================================= */
-
-function showWrong() {
-
-
-    feedback.textContent =
-        "✕";
-
-
-    feedback.style.color =
-        "#e53935";
-
-
-    feedback.classList.remove(
-        "hidden"
-    );
-
-
-    wrongSound.currentTime =
-        0;
-
-
-    wrongSound
-        .play()
-        .catch(() => {});
-
-
-    setTimeout(function() {
-
-        feedback.classList.add(
-            "hidden"
-        );
-
-    }, 800);
-
-}
-
-
-
-/* =========================================
-   CHECK ANSWER
-   ========================================= */
-
-function check(size, button) {
-
-
-    /*
-       Prevent double tapping after
-       a correct answer.
-    */
-
-    if (locked) {
-
-        return;
-
-    }
-
-
-    const q =
-        rounds[index];
-
-
-    /* =====================================
-       CORRECT
-       ===================================== */
-
-    if (size === q.target) {
-
-
-        locked = true;
-
-
-        score++;
-
-
-        scoreEl.textContent =
-            "⭐ " + score;
-
-
-        button.classList.add(
-            "selected"
-        );
-
-
-        speak(
-            "Correct! Well done!"
-        );
-
-
-        showCorrect();
-
-
-        /*
-           Move to the next question
-           after feedback.
-        */
-
-        setTimeout(function() {
-
-
-            index++;
-
-
-            if (
-                index >= rounds.length
-            ) {
-
-
-                finish();
-
-
-            } else {
-
-
-                render();
-
-
-            }
-
-
-        }, 950);
-
-
-    }
-
-
-    /* =====================================
-       WRONG
-       ===================================== */
-
-    else {
-
-
-        /*
-           Do NOT move to the next
-           question.
-        */
-
-        button.classList.add(
-            "wrong"
-        );
-
-
-        showWrong();
-
-
-        speak(
-            "Try again. Look carefully."
-        );
-
-
-        setTimeout(function() {
-
-            button.classList.remove(
-                "wrong"
-            );
-
-        }, 700);
-
-    }
-
-}
-
 
 
 /* =========================================
    START GAME
    ========================================= */
 
-function start() {
+function startGame() {
+
+
+    currentQuestion = 0;
+
+    score = 0;
+
+    questionLocked = false;
+
+
+    scoreDisplay.textContent =
+        "⭐ 0";
 
 
     startScreen.classList.add(
@@ -566,35 +681,19 @@ function start() {
     );
 
 
-    index = 0;
-
-    score = 0;
+    startMusic();
 
 
-    scoreEl.textContent =
-        "⭐ 0";
-
-
-    /*
-       Music starts after the child
-       taps Start Game, which avoids
-       mobile browser autoplay blocking.
-    */
-
-    playMusic();
-
-
-    render();
+    showQuestion();
 
 }
-
 
 
 /* =========================================
    FINISH GAME
    ========================================= */
 
-function finish() {
+function finishGame() {
 
 
     game.classList.add(
@@ -607,68 +706,71 @@ function finish() {
     );
 
 
-    document.getElementById(
-        "finalScore"
-    ).textContent =
-        `You scored ${score} out of 10!`;
+    finalScore.textContent =
+        "You scored " +
+        score +
+        " out of 10!";
 
 
-    speak(
-        `Great job! You scored ${score} out of 10.`
+    speakText(
+        "Great job! You scored " +
+        score +
+        " out of 10."
     );
 
 }
-
 
 
 /* =========================================
    START BUTTON
    ========================================= */
 
-document
-    .getElementById("startBtn")
-    .addEventListener(
-        "click",
-        start
-    );
+startBtn.addEventListener(
+    "click",
+    function() {
 
+        startGame();
+
+    }
+);
 
 
 /* =========================================
-   PLAY AGAIN BUTTON
+   PLAY AGAIN
    ========================================= */
 
-document
-    .getElementById("againBtn")
-    .addEventListener(
-        "click",
-        start
-    );
+againBtn.addEventListener(
+    "click",
+    function() {
 
+        startGame();
+
+    }
+);
 
 
 /* =========================================
    HEAR BUTTON
    ========================================= */
 
-document
-    .getElementById("hearBtn")
-    .addEventListener(
-        "click",
-        function() {
+hearBtn.addEventListener(
+    "click",
+    function() {
 
 
-            const q =
-                rounds[index];
+        const question =
+            rounds[currentQuestion];
 
 
-            speak(
-                `Tap on the ${q.target} ${q.item}.`
-            );
+        speakText(
+            "Tap on the " +
+            question.target +
+            " " +
+            question.item + "."
+        );
 
-        }
-    );
-
+    }
+);
 
 
 /* =========================================
@@ -678,6 +780,11 @@ document
 window.addEventListener(
     "load",
     function() {
+
+
+        startScreen.classList.add(
+            "hidden"
+        );
 
 
         setTimeout(

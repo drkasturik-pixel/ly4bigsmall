@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Big or Small?</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="splash"><img src="assets/innovine-logo.png" alt="Innovine Solutions"></div>
+
+<div id="startScreen" class="screen">
+  <div class="card">
+    <div class="emoji">🌟</div>
+    <h1>Big or Small?</h1>
+    <p>Look at the two objects.</p>
+    <p>Circle the <b>big</b> or <b>small</b> one.</p>
+    <button id="startBtn" type="button">▶ Start Game</button>
+  </div>
+</div>
+
+<div id="game" class="hidden">
+  <header>
+    <h1>Big or Small?</h1>
+    <div class="topRow">
+      <button id="hearBtn" type="button">🔊 Hear</button>
+      <div id="progress">1 / 10</div>
+      <div id="score">⭐ 0</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="question">
+      <p id="instruction">Circle the BIG object.</p>
+      <div id="pair" class="pair"></div>
+      <p class="hint">Tap the correct object.</p>
+    </section>
+    <div id="feedback" class="hidden"></div>
+    <div id="confetti"></div>
+  </main>
+</div>
+
+<div id="endScreen" class="screen hidden">
+  <div class="card">
+    <div class="emoji">🏆</div>
+    <h1>Great Job!</h1>
+    <p id="finalScore"></p>
+    <p>🎉 You know big and small!</p>
+    <button id="againBtn" type="button">🔄 Play Again</button>
+  </div>
+</div>
+
+<audio id="music" loop preload="auto"><source src="assets/background-music.mp3" type="audio/mpeg"></audio>
+<audio id="correctSound" preload="auto"><source src="assets/correct.mp3" type="audio/mpeg"></audio>
+<audio id="wrongSound" preload="auto"><source src="assets/wrong.mp3" type="audio/mpeg"></audio>
+
+<script src="speech.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
